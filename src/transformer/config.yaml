@@ -1,0 +1,28 @@
+# Transformer 中译英项目配置
+
+model:
+  d_model: 512
+  d_ff: 2048
+  n_heads: 8
+  n_layers: 6
+  dropout: 0.1
+  max_len: 5000
+
+# lr	每次参数更新步长
+# batch_size	每次更新用多少条样本
+# epochs	把全部数据训练多少遍
+# momentum	SGD 的惯性，让更新更平滑
+training:
+  lr: 0.001
+  batch_size: 32
+  epochs: 50
+  momentum: 0.99
+
+# 生命周期工具：WandB 与 TensorBoard 二选一或同时使用
+logging:
+  use_wandb: true
+  use_tensorboard: true
+  wandb_project: "transformer-zh-en"
+  wandb_entity: null   # 你的 WandB 用户名/团队，null 则用默认
+  log_dir: "runs"
+  log_gradients_every_n_steps: 50   # 每 N 步记录一次梯度直方图
