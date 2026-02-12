@@ -3,6 +3,8 @@ from .dataset import (
     make_data,
     TranslationDataset,
     get_default_sentences,
+    load_sentences_from_file,
+    load_sentences_from_config,
 )
 
 __all__ = [
@@ -10,4 +12,6 @@ __all__ = [
     "make_data",
     "TranslationDataset",
     "get_default_sentences",
+    "load_sentences_from_file",
+    "load_sentences_from_config",
 ]

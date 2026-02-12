@@ -21,9 +21,30 @@ src/transformer/
 
 ## 配置 (config.yaml)
 
+- **data**: `source`（`builtin` | `file`）、`path`（文件路径）、`encoding`、`delimiter`
 - **model**: `d_model`, `d_ff`, `n_heads`, `n_layers`, `dropout`, `max_len`
 - **training**: `lr`, `batch_size`, `epochs`, `momentum`
 - **logging**: `use_wandb` / `use_tensorboard`, `wandb_project`, `log_dir`, `log_gradients_every_n_steps`
+
+## 数据源切换
+
+在 `config.yaml` 的 `data` 里设置：
+
+- **`source: builtin`**：使用内置 10 句中译英示例（默认）。
+- **`source: file`**：从文件加载。需设置 `data.path`（如 `data/train.tsv`），路径相对当前工作目录。
+
+**文件格式**（首行为表头，会被跳过）：
+
+- **2 列**：`src`, `tgt`（按空格分词）。程序自动生成解码器输入/输出（S + tgt、tgt + E）。
+- **3 列**：`src`, `dec_input`, `dec_output`。与内置格式一致，可完全自定义。
+
+示例 `data/train.tsv`（2 列）：
+
+```
+src	tgt
+我 是 教 师 P	I am a teacher
+我 喜 欢 教 学	I like teaching P
+```
 
 ## 运行方式
 

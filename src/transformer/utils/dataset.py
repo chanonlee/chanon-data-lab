@@ -1,16 +1,73 @@
 """
-分词、词表、Padding 与 Dataset。
+分词、词表、Padding 与 Dataset。支持内置数据与从文件加载。
 """
+from pathlib import Path
 import torch
 from torch import LongTensor
 from torch.utils.data import Dataset
-from typing import List, Tuple, Dict, Optional
+from typing import List, Tuple, Dict, Optional, Any
 
 
 # 特殊 token
 PAD = "P"
 BOS = "S"
 EOS = "E"
+
+
+def load_sentences_from_file(
+    path: str,
+    encoding: str = "utf-8",
+    delimiter: str = "\t",
+) -> List[List[str]]:
+    """
+    从 TSV/CSV 加载平行句对，返回与 get_default_sentences() 相同格式的列表。
+
+    文件有两种格式（首行为表头，会被跳过）：
+    - 2 列：src, tgt → 自动生成 dec_input = "S " + tgt, dec_output = tgt + " E"
+    - 3 列：src, dec_input, dec_output → 直接使用
+    """
+    resolved = Path(path)
+    if not resolved.is_absolute():
+        resolved = Path.cwd() / path
+    if not resolved.exists():
+        raise FileNotFoundError(f"数据文件不存在: {resolved}")
+
+    rows: List[List[str]] = []
+    with open(resolved, "r", encoding=encoding, newline="") as f:
+        lines = [line.rstrip("\n\r") for line in f if line.strip()]
+    if not lines:
+        return rows
+    # 表头
+    header = lines[0].split(delimiter)
+    ncols = len(header)
+    for line in lines[1:]:
+        parts = line.split(delimiter)
+        if len(parts) < 2:
+            continue
+        if ncols >= 3 and len(parts) >= 3:
+            rows.append([parts[0].strip(), parts[1].strip(), parts[2].strip()])
+        else:
+            src, tgt = parts[0].strip(), parts[1].strip()
+            rows.append([src, BOS + " " + tgt, tgt + " " + EOS])
+    return rows
+
+
+def load_sentences_from_config(config: Any) -> List[List[str]]:
+    """
+    根据 config 中的 data 配置选择数据源，返回 sentences（格式同 get_default_sentences）。
+    """
+    data_cfg = config.get("data") or {}
+    source = data_cfg.get("source", "builtin")
+    if source == "builtin":
+        return get_default_sentences()
+    if source == "file":
+        path = data_cfg.get("path")
+        if not path:
+            raise ValueError("data.source=file 时必须在 config 中设置 data.path")
+        encoding = data_cfg.get("encoding", "utf-8")
+        delimiter = data_cfg.get("delimiter", "\t")
+        return load_sentences_from_file(path, encoding=encoding, delimiter=delimiter)
+    raise ValueError(f"不支持的 data.source: {source}，可选 builtin | file")
 
 
 def get_default_sentences() -> List[List[str]]:

@@ -1,5 +1,15 @@
 # Transformer 中译英项目配置
 
+# 数据源：builtin = 内置 10 句示例；file = 从文件加载
+data:
+  source: builtin   # builtin | file
+  path: null        # source=file 时生效，如: data/train.tsv
+  encoding: utf-8
+  delimiter: "\t"   # TSV 用 \t，CSV 用 ,
+  # 文件格式二选一：
+  # - 2 列：src, tgt（按空格分词），程序自动生成 S/tgt 与 tgt/E
+  # - 3 列：src, dec_input, dec_output（与内置格式一致）
+
 model:
   d_model: 512
   d_ff: 2048

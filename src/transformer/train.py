@@ -23,7 +23,7 @@ except ImportError:
 
 from models import Transformer
 from utils.dataset import (
-    get_default_sentences,
+    load_sentences_from_config,
     build_vocabs_from_sentences,
     make_data,
     TranslationDataset,
@@ -97,69 +97,50 @@ def train(config_path: str = "config.yaml", data_dir: str = None):
     # 设备选择，cuda还是cpu
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    # 数据处理 获取默认数据集。TODO 这里没有切换多数据源
-    sentences = get_default_sentences()
+    # 数据：根据 config.data 选择 builtin 或 file
+    sentences = load_sentences_from_config(config)
 
-    # 构建输入和输出的字符 -> 数字映射表
     (
-        src_vocab2idx,
+        src_vocab,
         src_idx2word,
-        tgt_vocab2idx,
+        tgt_vocab,
         tgt_idx2word,
         src_vocab_size,
         tgt_vocab_size,
     ) = build_vocabs_from_sentences(sentences)
 
-    # # 两边的映射表
-    # # {'P': 0, '厨': 1, '喜': 2, '学': 3, '师': 4, '我': 5, '教': 6, '是': 7, '欢': 8}
-    # print(src_vocab2idx)
-    # # {0: 'P', 1: '厨', 2: '喜', 3: '学', 4: '师', 5: '我', 6: '教', 7: '是', 8: '欢'}
-    # print(src_idx2word)
-    # # 9
-    # print(src_vocab_size)
-    #
-    # # {'P': 0, 'E': 1, 'I': 2, 'S': 3, 'a': 4, 'am': 5, 'cook': 6, 'like': 7, 'teacher': 8, 'teaching': 9}
-    # print(tgt_vocab2idx)
-    # # {0: 'P', 1: 'E', 2: 'I', 3: 'S', 4: 'a', 5: 'am', 6: 'cook', 7: 'like', 8: 'teacher', 9: 'teaching'}
-    # print(tgt_idx2word)
-    # # 10
-    # print(tgt_vocab_size)
+    # 两边的映射表
+    # {'P': 0, '厨': 1, '喜': 2, '学': 3, '师': 4, '我': 5, '教': 6, '是': 7, '欢': 8}
+    print(src_vocab)
+    # {0: 'P', 1: '厨', 2: '喜', 3: '学', 4: '师', 5: '我', 6: '教', 7: '是', 8: '欢'}
+    print(src_idx2word)
+    # 9
+    print(src_vocab_size)
 
-    # 将字符输入转换成数字
-    enc_inputs, dec_inputs, dec_outputs = make_data(sentences, src_vocab2idx, tgt_vocab2idx)
+    # {'P': 0, 'E': 1, 'I': 2, 'S': 3, 'a': 4, 'am': 5, 'cook': 6, 'like': 7, 'teacher': 8, 'teaching': 9}
+    print(tgt_vocab)
+    # {0: 'P', 1: 'E', 2: 'I', 3: 'S', 4: 'a', 5: 'am', 6: 'cook', 7: 'like', 8: 'teacher', 9: 'teaching'}
+    print(tgt_idx2word)
+    # 10
+    print(tgt_vocab_size)
 
-    # # [[5, 7, 6, 4, 0], [5, 2, 8, 6, 3], [5, 7, 1, 4, 0]]
-    # print(enc_inputs)
-    # # [[3, 2, 5, 4, 8], [3, 2, 7, 9, 0], [3, 2, 5, 4, 6]]
-    # print(dec_inputs)
-    # # [[2, 5, 4, 8, 1], [2, 7, 9, 0, 1], [2, 5, 4, 6, 1]]
-    # print(dec_outputs)
+    enc_inputs, dec_inputs, dec_outputs = make_data(sentences, src_vocab, tgt_vocab)
+    dataset = TranslationDataset(enc_inputs, dec_inputs, dec_outputs)
+    batch_size = config["training"]["batch_size"]
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
-    # 对输入做预处理，补齐，矩阵整型
-    dataset = TranslationDataset(enc_inputs = enc_inputs, dec_inputs = dec_inputs, dec_outputs = dec_outputs)
-
-    # 将输入拆分成分批数据
-    loader = DataLoader(dataset, config["training"]["batch_size"], shuffle=True)
-
-    # 构建模型
+    # 模型
     model_cfg = config["model"]
-    # 这个模型的参数，还是需要心里有模型形状图才能理解啊
     model = Transformer(
-        # 输入这两个size是用来干嘛的？
         src_vocab_size=src_vocab_size,
         tgt_vocab_size=tgt_vocab_size,
-        # d_model的含义？每个 token 在模型里始终用多少维的向量表示，embedding以后的向量维度
         d_model=model_cfg["d_model"],
-        # d_ff的含义？前馈神经网络升维时升到多少维
         d_ff=model_cfg["d_ff"],
-        # 多头注意力共有多少头
         n_heads=model_cfg["n_heads"],
-        # 编码器解码器中的层数有多少层
         n_layers=model_cfg["n_layers"],
         dropout=model_cfg.get("dropout", 0.1),
         max_len=model_cfg.get("max_len", 5000),
     ).to(device)
-    print("\nTransformer Shape: \n",model)
 
     criterion = nn.CrossEntropyLoss(ignore_index=0)
     train_cfg = config["training"]
@@ -219,15 +200,15 @@ def train(config_path: str = "config.yaml", data_dir: str = None):
     torch.save({
         "model_state_dict": model.state_dict(),
         "config": config,
-        "src_vocab2idx": src_vocab2idx,
+        "src_vocab": src_vocab,
         "src_idx2word": src_idx2word,
-        "tgt_vocab2idx": tgt_vocab2idx,
+        "tgt_vocab": tgt_vocab,
         "tgt_idx2word": tgt_idx2word,
         "src_vocab_size": src_vocab_size,
         "tgt_vocab_size": tgt_vocab_size,
     }, ckpt_path)
     print(f"Checkpoint 已保存: {ckpt_path}")
-    return model, src_vocab2idx, src_idx2word, tgt_vocab2idx, tgt_idx2word, config
+    return model, src_vocab, src_idx2word, tgt_vocab, tgt_idx2word, config
 
 
 if __name__ == "__main__":
