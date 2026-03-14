@@ -1,0 +1,37 @@
+{
+  "os":  "macOS-26.0.1-arm64-arm-64bit",
+  "python":  "CPython 3.9.6",
+  "startedAt":  "2026-02-12T04:49:29.016990Z",
+  "program":  "/Users/ludan/project/chanon-data-lab/src/transformer/__main__.py",
+  "codePath":  "src/transformer/__main__.py",
+  "codePathLocal":  "__main__.py",
+  "git":  {
+    "remote":  "git@github.com:chanonlee/chanon-data-lab.git",
+    "commit":  "26529649f92bbc0394bb0ee5b5e061b291eccdfe"
+  },
+  "email":  "973288639@qq.com",
+  "root":  "/Users/ludan/project/chanon-data-lab/src/transformer",
+  "host":  "yedeMacBook-Air.local",
+  "executable":  "/Users/ludan/project/chanon-data-lab/.venv/bin/python",
+  "cpu_count":  10,
+  "cpu_count_logical":  10,
+  "disk":  {
+    "/":  {
+      "total":  "245107195904",
+      "used":  "106989158400"
+    }
+  },
+  "memory":  {
+    "total":  "17179869184"
+  },
+  "apple":  {
+    "name":  "Apple M4",
+    "ecpuCores":  6,
+    "pcpuCores":  4,
+    "gpuCores":  8,
+    "memoryGb":  16,
+    "swapTotalBytes":  "8589934592",
+    "ramTotalBytes":  "17179869184"
+  },
+  "writerId":  "and8r15ij1iuij5gu3wumg5v1n5wfa3k"
+}

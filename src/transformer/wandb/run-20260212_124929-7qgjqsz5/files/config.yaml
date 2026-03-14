@@ -1,0 +1,72 @@
+_wandb:
+    value:
+        cli_version: 0.24.2
+        e:
+            and8r15ij1iuij5gu3wumg5v1n5wfa3k:
+                apple:
+                    ecpuCores: 6
+                    gpuCores: 8
+                    memoryGb: 16
+                    name: Apple M4
+                    pcpuCores: 4
+                    ramTotalBytes: "17179869184"
+                    swapTotalBytes: "8589934592"
+                codePath: src/transformer/__main__.py
+                codePathLocal: __main__.py
+                cpu_count: 10
+                cpu_count_logical: 10
+                disk:
+                    /:
+                        total: "245107195904"
+                        used: "106989158400"
+                email: 973288639@qq.com
+                executable: /Users/ludan/project/chanon-data-lab/.venv/bin/python
+                git:
+                    commit: 26529649f92bbc0394bb0ee5b5e061b291eccdfe
+                    remote: git@github.com:chanonlee/chanon-data-lab.git
+                host: yedeMacBook-Air.local
+                memory:
+                    total: "17179869184"
+                os: macOS-26.0.1-arm64-arm-64bit
+                program: /Users/ludan/project/chanon-data-lab/src/transformer/__main__.py
+                python: CPython 3.9.6
+                root: /Users/ludan/project/chanon-data-lab/src/transformer
+                startedAt: "2026-02-12T04:49:29.016990Z"
+                writerId: and8r15ij1iuij5gu3wumg5v1n5wfa3k
+        m: []
+        python_version: 3.9.6
+        t:
+            "1":
+                - 1
+            "2":
+                - 1
+            "3":
+                - 2
+                - 16
+                - 61
+            "4": 3.9.6
+            "5": 0.24.2
+            "12": 0.24.2
+            "13": darwin-arm64
+logging:
+    value:
+        log_dir: runs
+        log_gradients_every_n_steps: 50
+        use_tensorboard: true
+        use_wandb: true
+        wandb_entity: null
+        wandb_project: transformer-zh-en
+model:
+    value:
+        d_ff: 2048
+        d_model: 512
+        dropout: 0.1
+        max_len: 5000
+        n_heads: 8
+        n_layers: 6
+training:
+    value:
+        batch_size: 32
+        epochs: 50
+        lr: 0.001
+        momentum: 0.99

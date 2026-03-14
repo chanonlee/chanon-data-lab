@@ -1,0 +1,20 @@
+# Python 3.10+ 环境依赖（含 bitsandbytes>=0.43.1，支持 Mac 无 CUDA）
+# 用于 ChatGLM3 微调等
+
+# 核心
+torch>=2.3.0
+transformers>=4.40.0
+accelerate>=0.29.2
+bitsandbytes>=0.43.1
+
+# 微调 / 训练
+peft>=0.10.0
+datasets
+jupyter
+ipykernel
+pandas
+numpy
+
+# ChatGLM3 常用（与 requirements_mac 对齐）
+sentencepiece>=0.2.0
+cpm_kernels>=1.0.11

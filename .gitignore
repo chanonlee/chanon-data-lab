@@ -1,1 +1,9 @@
 /wandb/
+/chroma-data/
+/scripts/
+/.venv/
+/.idea/
+/.cursor/
+/articles/
+/notebookes/-/
+/docker-file/
