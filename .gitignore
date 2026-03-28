@@ -7,3 +7,5 @@
 /articles/
 /notebookes/-/
 /docker-file/
+# 训练产物与权重，勿提交（GitHub 单文件 100MB 限制）
+src/transformer/runs/checkpoints/
