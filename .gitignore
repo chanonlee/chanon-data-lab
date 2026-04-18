@@ -2,6 +2,7 @@
 /chroma-data/
 /scripts/
 /.venv/
+.docs/.venv/
 /.idea/
 /.cursor/
 /articles/

@@ -1,0 +1,3 @@
+# harness-agent（OpenHarness）仅支持 Python 3.12+
+# 建议：python3.12 -m venv .venv && source .venv/bin/activate && pip install -r requirements-harness.txt
+harness-agent>=0.6.0
