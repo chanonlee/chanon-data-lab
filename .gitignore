@@ -16,3 +16,4 @@ src/transformer/runs/checkpoints/
 .env
 .env.local
 .docs/.env.local
+.docs/llm_config.py
