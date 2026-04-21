@@ -12,19 +12,19 @@ ACTIVE_ENV = "bailian"
 ENV_CONFIGS: dict[str, dict] = {
     "bailian": {
         "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-        "api_key": "sk-1ea33e59d2704e31be3632213be61118",
+        "api_key": "REDACTED",
         "model": "qwen-plus",
         "temperature": 0.0,
     },
     "local": {
         "base_url": "http://127.0.0.1:1234/v1",
-        "api_key": "not-needed",
+        "api_key": "REDACTED",
         "model": "qwen3",
         "temperature": 0.0,
     },
     "openai": {
         "base_url": None,  # OpenAI 官方端点，不设置 base_url
-        "api_key": "",
+        "api_key": "REDACTED",
         "model": "gpt-4o-mini",
         "temperature": 0.0,
     },
