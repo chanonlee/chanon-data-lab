@@ -2,6 +2,7 @@
 /chroma-data/
 /scripts/
 /.venv/
+/.venv_py312/
 .docs/.venv/
 /.idea/
 /.cursor/
