@@ -13,3 +13,6 @@
 # 训练产物与权重，勿提交（GitHub 单文件 100MB 限制）
 src/transformer/runs/checkpoints/
 .DS_Store
+.env
+.env.local
+.docs/.env.local
