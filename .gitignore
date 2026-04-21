@@ -2,6 +2,7 @@
 /chroma-data/
 /scripts/
 /.venv/
+/.venv_langgraph/
 /.venv_py312/
 .docs/.venv/
 /.idea/
@@ -11,3 +12,4 @@
 /docker-file/
 # 训练产物与权重，勿提交（GitHub 单文件 100MB 限制）
 src/transformer/runs/checkpoints/
+.DS_Store
