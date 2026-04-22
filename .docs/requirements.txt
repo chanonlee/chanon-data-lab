@@ -1,7 +1,9 @@
 langchain
 langchain-openai
+langchain-classic
 langchain-community
 wikipedia
 tiktoken
 numexpr
 python-dotenv
+dotenv
