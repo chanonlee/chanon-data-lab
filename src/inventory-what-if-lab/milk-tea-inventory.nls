@@ -1,0 +1,662 @@
+breed [stores store]
+breed [material-batches material-batch]
+breed [purchase-orders purchase-order]
+
+
+; ============================================================
+; GLOBALS
+; ============================================================
+
+globals [
+  day
+  total-waste
+  total-tea-milk-tea
+]
+
+
+; ============================================================
+; STORE
+; ============================================================
+
+stores-own [
+  purchasing-policy
+
+  ; 门店已经下单、但还没有到货的数量
+  on-order-tea
+  on-order-milk
+  on-order-pearl
+
+  ; 门店今天产生的采购请求
+  request-tea
+  request-milk
+  request-pearl
+]
+
+
+; ============================================================
+; MATERIAL BATCH
+; ============================================================
+
+material-batches-own [
+  material-type
+  quantity
+  age
+  shelf-life
+]
+
+
+; ============================================================
+; PURCHASE ORDER
+; ============================================================
+
+purchase-orders-own [
+  material-type
+  quantity
+  shelf-life
+  arrival-day
+]
+
+
+; ============================================================
+; SETUP
+; ============================================================
+
+to setup
+
+  clear-all
+
+  set day 0
+  set total-waste 0
+  set total-tea-milk-tea 0
+
+
+  ; ----------------------------------------------------------
+  ; 创建门店
+  ; ----------------------------------------------------------
+
+  create-stores 1 [
+
+    setxy 0 0
+
+    set shape "house"
+    set color blue
+    set size 2
+
+    set purchasing-policy "reorder-point"
+
+    set on-order-tea 0
+    set on-order-milk 0
+    set on-order-pearl 0
+
+    set request-tea 0
+    set request-milk 0
+    set request-pearl 0
+  ]
+
+
+  ; ----------------------------------------------------------
+  ; 初始库存
+  ; ----------------------------------------------------------
+
+  add-material "tea" 100 5
+  add-material "milk" 80 3
+  add-material "pearl" 50 2
+
+
+  reset-ticks
+end
+
+
+; ============================================================
+; MAIN LOOP
+; ============================================================
+
+to go
+
+  set day day + 1
+
+
+  ; ----------------------------------------------------------
+  ; 1. 采购单到货
+  ; ----------------------------------------------------------
+
+  receive-purchase-orders
+
+
+  ; ----------------------------------------------------------
+  ; 2. Store 观察世界并做采购决策
+  ; ----------------------------------------------------------
+
+  ask stores [
+    make-purchasing-decision
+  ]
+
+
+  ; ----------------------------------------------------------
+  ; 3. 世界执行 Store 产生的采购请求
+  ; ----------------------------------------------------------
+
+  process-purchase-requests
+
+
+  ; ----------------------------------------------------------
+  ; 4. 根据配方自动生产奶茶
+  ; ----------------------------------------------------------
+
+  produce-milk-tea
+
+
+  ; ----------------------------------------------------------
+  ; 5. 一天结束，物料年龄 +1
+  ; ----------------------------------------------------------
+
+  ask material-batches [
+    set age age + 1
+  ]
+
+
+  ; ----------------------------------------------------------
+  ; 6. 过期报废
+  ; ----------------------------------------------------------
+
+  expire-materials
+
+
+  tick
+end
+
+
+; ============================================================
+; MATERIAL
+; ============================================================
+
+to add-material [material-name amount shelf]
+
+  create-material-batches 1 [
+
+    set material-type material-name
+    set quantity amount
+    set age 0
+    set shelf-life shelf
+
+    set shape "circle"
+    set size 1
+
+    place-near-store
+    set-material-color
+  ]
+end
+
+
+to place-near-store
+
+  setxy
+    (random-float 6) - 3
+    (random-float 6) - 3
+end
+
+
+to set-material-color
+
+  if material-type = "tea" [
+    set color green
+  ]
+
+  if material-type = "milk" [
+    set color white
+  ]
+
+  if material-type = "pearl" [
+    set color brown
+  ]
+end
+
+
+; ============================================================
+; STORE BEHAVIOR
+; ============================================================
+
+to make-purchasing-decision
+
+  ; ----------------------------------------------------------
+  ; 门店观察：
+  ;
+  ; 有效库存 = 当前库存 + 在途库存
+  ;
+  ; 这样不会因为运输需要一天，而连续重复下单。
+  ; ----------------------------------------------------------
+
+
+  ; ==========================
+  ; 牛奶
+  ; ==========================
+
+  let milk-available
+    (total-material "milk") + on-order-milk
+
+  if milk-available < 30 [
+
+    set request-milk 100
+  ]
+
+
+  ; ==========================
+  ; 珍珠
+  ; ==========================
+
+  let pearl-available
+    (total-material "pearl") + on-order-pearl
+
+  if pearl-available < 20 [
+
+    set request-pearl 50
+  ]
+
+
+  ; ==========================
+  ; 茶
+  ; ==========================
+
+  let tea-available
+    (total-material "tea") + on-order-tea
+
+  if tea-available < 50 [
+
+    set request-tea 100
+  ]
+end
+
+
+; ============================================================
+; PURCHASE REQUEST
+; ============================================================
+
+; Store 自己不能 create-purchase-orders。
+;
+; 所以 Store 只产生“请求”：
+;
+; request-milk = 100
+;
+; 然后 Observer 在 process-purchase-requests 中
+; 把请求转换成真正的 PurchaseOrder Agent。
+;
+; 这相当于：
+;
+; Agent 决策
+;     ↓
+; Intent / Command
+;     ↓
+; 世界执行
+;
+
+
+to process-purchase-requests
+
+  ; Observer 遍历门店；create-purchase-orders 只能在 observer 上下文调用
+  foreach sort stores [ the-store ->
+
+    ; --------------------------------------------------------
+    ; 牛奶
+    ; --------------------------------------------------------
+
+    let milk-req [request-milk] of the-store
+
+    if milk-req > 0 [
+
+      create-purchase-order
+        "milk"
+        milk-req
+        3
+
+      ask the-store [
+
+        set on-order-milk
+          on-order-milk + milk-req
+
+        set request-milk 0
+      ]
+    ]
+
+
+    ; --------------------------------------------------------
+    ; 珍珠
+    ; --------------------------------------------------------
+
+    let pearl-req [request-pearl] of the-store
+
+    if pearl-req > 0 [
+
+      create-purchase-order
+        "pearl"
+        pearl-req
+        2
+
+      ask the-store [
+
+        set on-order-pearl
+          on-order-pearl + pearl-req
+
+        set request-pearl 0
+      ]
+    ]
+
+
+    ; --------------------------------------------------------
+    ; 茶
+    ; --------------------------------------------------------
+
+    let tea-req [request-tea] of the-store
+
+    if tea-req > 0 [
+
+      create-purchase-order
+        "tea"
+        tea-req
+        5
+
+      ask the-store [
+
+        set on-order-tea
+          on-order-tea + tea-req
+
+        set request-tea 0
+      ]
+    ]
+  ]
+end
+
+
+; ============================================================
+; PURCHASE ORDER
+; ============================================================
+
+to create-purchase-order [material-name amount shelf]
+
+  create-purchase-orders 1 [
+
+    set material-type material-name
+    set quantity amount
+    set shelf-life shelf
+
+    ; 一天后到货
+    set arrival-day day + 1
+
+    set shape "square"
+    set size 0.8
+    set color yellow
+
+    setxy
+      (random-float 8) + 4
+      (random-float 6) - 3
+  ]
+end
+
+
+; ============================================================
+; RECEIVE PURCHASE ORDERS
+; ============================================================
+
+to receive-purchase-orders
+
+  ask purchase-orders with [
+    arrival-day <= day
+  ] [
+
+    receive-purchase-order
+  ]
+end
+
+
+; ============================================================
+; PURCHASE ORDER BEHAVIOR
+; ============================================================
+
+to receive-purchase-order
+
+  let material-name material-type
+  let amount quantity
+  let shelf shelf-life
+
+
+  ; ----------------------------------------------------------
+  ; 采购单到货
+  ; ----------------------------------------------------------
+
+  hatch-material-batches 1 [
+
+    set material-type material-name
+    set quantity amount
+    set age 0
+    set shelf-life shelf
+
+    set shape "circle"
+    set size 1
+
+    place-near-store
+    set-material-color
+  ]
+
+
+  ; ----------------------------------------------------------
+  ; 通知门店：
+  ; 在途库存减少
+  ;
+  ; 当前模型只有一个门店，因此直接 ask stores。
+  ; 后面有多个门店时，把 store-id 加进 PurchaseOrder 即可。
+  ; ----------------------------------------------------------
+
+  ask one-of stores [
+
+    if material-name = "tea" [
+      set on-order-tea
+        on-order-tea - amount
+    ]
+
+    if material-name = "milk" [
+      set on-order-milk
+        on-order-milk - amount
+    ]
+
+    if material-name = "pearl" [
+      set on-order-pearl
+        on-order-pearl - amount
+    ]
+  ]
+
+
+  ; ----------------------------------------------------------
+  ; 采购单完成
+  ; ----------------------------------------------------------
+
+  die
+end
+
+
+; ============================================================
+; RECIPE
+; ============================================================
+
+; 珍珠奶茶：
+;
+; 茶      10
+; 牛奶    20
+; 珍珠    15
+;
+; 这里只定义规则，不把 Recipe 做成 Agent。
+;
+
+
+; ============================================================
+; CALCULATE MAX PRODUCTION
+; ============================================================
+
+to-report max-milk-tea
+
+  let tea-quantity
+    total-material "tea"
+
+  let milk-quantity
+    total-material "milk"
+
+  let pearl-quantity
+    total-material "pearl"
+
+
+  let tea-cups
+    floor (tea-quantity / 10)
+
+  let milk-cups
+    floor (milk-quantity / 20)
+
+  let pearl-cups
+    floor (pearl-quantity / 15)
+
+
+  report min (list
+    tea-cups
+    milk-cups
+    pearl-cups
+  )
+end
+
+
+; ============================================================
+; PRODUCE MILK TEA
+; ============================================================
+
+to produce-milk-tea
+
+  let amount max-milk-tea
+
+
+  if amount <= 0 [
+    stop
+  ]
+
+
+  ; ----------------------------------------------------------
+  ; 消耗材料
+  ; ----------------------------------------------------------
+
+  consume-material
+    "tea"
+    (amount * 10)
+
+  consume-material
+    "milk"
+    (amount * 20)
+
+  consume-material
+    "pearl"
+    (amount * 15)
+
+
+  ; ----------------------------------------------------------
+  ; 记录生产量
+  ; ----------------------------------------------------------
+
+  set total-tea-milk-tea
+    total-tea-milk-tea + amount
+end
+
+
+; ============================================================
+; FEFO
+; First Expired, First Out
+; ============================================================
+
+to consume-material [material-name amount]
+
+  let remaining amount
+
+
+  while [remaining > 0] [
+
+    let candidates
+      material-batches with [
+        material-type = material-name
+      ]
+
+
+    if not any? candidates [
+      stop
+    ]
+
+
+    ; --------------------------------------------------------
+    ; 剩余保质期最短的批次优先
+    ; --------------------------------------------------------
+
+    let batch
+      min-one-of candidates [
+        shelf-life - age
+      ]
+
+
+    let batch-quantity
+      [quantity] of batch
+
+
+    ; --------------------------------------------------------
+    ; 整个批次消耗
+    ; --------------------------------------------------------
+
+    ifelse batch-quantity <= remaining [
+
+      set remaining
+        remaining - batch-quantity
+
+      ask batch [
+        die
+      ]
+    ]
+
+
+    ; --------------------------------------------------------
+    ; 只消耗一部分
+    ; --------------------------------------------------------
+
+    [
+
+      ask batch [
+        set quantity
+          quantity - remaining
+      ]
+
+      set remaining 0
+    ]
+  ]
+end
+
+
+; ============================================================
+; EXPIRATION
+; ============================================================
+
+to expire-materials
+
+  ask material-batches [
+
+    if age >= shelf-life [
+
+      set total-waste
+        total-waste + quantity
+
+      die
+    ]
+  ]
+end
+
+
+; ============================================================
+; INVENTORY QUERY
+; ============================================================
+
+to-report total-material [material-name]
+
+  report sum [
+    quantity
+  ] of material-batches with [
+    material-type = material-name
+  ]
+end
